@@ -2,7 +2,6 @@
 
 User Function OlaMundo()
 
-    MsgAlert("Ola mundo!")
+	MsgAlert("Ola mundo!")
 
 Return
-    
