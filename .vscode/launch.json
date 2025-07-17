@@ -33,7 +33,10 @@
 		},
 		{
 			"label": "U_DoCase"
+		},
+		{
+			"label": "U_repeticao"
 		}
 	],
-	"lastProgramExecuted": "U_DoCase"
+	"lastProgramExecuted": "U_repeticao"
 }
