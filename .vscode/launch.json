@@ -24,7 +24,10 @@
 		},
 		{
 			"label": "U_variavel"
+		},
+		{
+			"label": "U_Operadores"
 		}
 	],
-	"lastProgramExecuted": "U_variavel"
+	"lastProgramExecuted": "U_Operadores"
 }
