@@ -18,7 +18,13 @@
 	"lastPrograms": [
 		{
 			"label": "U_OlaMundo"
+		},
+		{
+			"label": "variavel"
+		},
+		{
+			"label": "U_variavel"
 		}
 	],
-	"lastProgramExecuted": "U_OlaMundo"
+	"lastProgramExecuted": "U_variavel"
 }
