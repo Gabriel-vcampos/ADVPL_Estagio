@@ -65,7 +65,7 @@ MsgAlert("Bem-vindo ao jogo de adivinhação!")
 MsgAlert("Adivinhe o número de 0 a 100")
 
 nCount = -1
-nNumeroAleatorio := 97
+nNumeroAleatorio := 50
 nNumeroUsuario := 0
 
 while nNumeroUsuario != nNumeroAleatorio

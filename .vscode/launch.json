@@ -42,7 +42,10 @@
 		},
 		{
 			"label": "U_adivinha"
+		},
+		{
+			"label": "U_banco01"
 		}
 	],
-	"lastProgramExecuted": "U_adivinha"
+	"lastProgramExecuted": "U_banco01"
 }
