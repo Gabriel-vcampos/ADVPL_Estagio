@@ -1,10 +1,11 @@
-#INCLUDE 'protheus.ch'
+/*#INCLUDE 'protheus.ch'
 
 
-/*Meu código feito sem o auxílio da videoaula*/
+Meu código feito sem o auxílio da videoaula
+E feito totalmente mal otimizado
 
-/*Adição que eu podia ter feito:
-Usar a function randomize(1,100)*/
+Adição que eu podia ter feito:
+Usar a function randomize(1,100)
 
 User function Adivinha()
 MsgAlert("Bem-vindo ao jogo de adivinhação!")
@@ -47,4 +48,39 @@ MsgAlert("Você escolheu o número: " + cValToChar(nNumeroUsuario))
 
 EndDo
 
+Return
+*/
+
+
+#INCLUDE 'protheus.ch'
+
+
+/*Meu código feito aora om escopo bem menor e otimizado*/
+
+/*Adição que eu podia ter feito:
+Usar a function randomize(1,100)*/
+
+User function Adivinha()
+MsgAlert("Bem-vindo ao jogo de adivinhação!")
+MsgAlert("Adivinhe o número de 0 a 100")
+
+nCount = -1
+nNumeroAleatorio := 97
+nNumeroUsuario := 0
+
+while nNumeroUsuario != nNumeroAleatorio
+
+nCount++
+nNumeroUsuario := Val(FWInputBox("Digite um número a seguir:",""))
+MsgAlert("Você escolheu o número: " + cValToChar(nNumeroUsuario))
+                if(nNumeroUsuario > nNumeroAleatorio)
+                    MsgAlert("O Seu número é maior que o da máquina!")
+                    elseif (nNumeroUsuario < nNumeroAleatorio)
+                    MsgAlert("O Seu número é menor que o da máquina!")
+                    else
+                        Exit
+                    EndIf
+EndDo
+
+MsgAlert("Você acertou! Tentivas realizadas: " + cValToChar(nCount))
 Return
