@@ -60,7 +60,25 @@
 		},
 		{
 			"label": "U_maluco3"
+		},
+		{
+			"label": "U_exdesafio1"
+		},
+		{
+			"label": "U_exdesafio2"
+		},
+		{
+			"label": "U_exdesafiocadastro"
+		},
+		{
+			"label": "U_desafiofatorial"
+		},
+		{
+			"label": "U_exercicio2"
+		},
+		{
+			"label": "U_desafioestoque"
 		}
 	],
-	"lastProgramExecuted": "U_maluco3"
+	"lastProgramExecuted": "U_desafioestoque"
 }

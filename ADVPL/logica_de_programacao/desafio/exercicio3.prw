@@ -22,7 +22,7 @@ Mostre também o valor total de todos os produtos juntos (soma dos totais individ
 
 #INCLUDE 'protheus.ch'
 
-User function maluco3()
+User function desafioestoque()
 
     Local i := 1
     Local x := 1

@@ -1,7 +1,3 @@
-#INCLUDE 'protheus.ch'
-
-User function maluco()
-
 /*📘 Exercício 1 – Cadastro de Produtos com Validação
 Objetivo: Trabalhar variáveis, While e If.
 
@@ -13,6 +9,9 @@ preço formatado.
 Desafio Extra: Use While para repetir o processo até que o preço esteja correto.
 
 */
+#INCLUDE 'protheus.ch'
+
+User function exdesafiocadastro()
     
     Local aNomeProdutos := {}
     Local aPrecoProdutos := {}
