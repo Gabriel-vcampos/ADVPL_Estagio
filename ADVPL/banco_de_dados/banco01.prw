@@ -1,19 +1,26 @@
-#INCLUDE 'protheus.ch'
+#INCLUDE "protheus.ch"
 
-User function Banco01()
-    Local  aArea := ZZB ->(GetArea())
+User Function Banco01()
+    Local aArea := {}
     Local cMsg := ""
 
-    DBSelectArea("ZZB")
-    ZZB -> (DBSetOrder(1)) // Posiciona no índice 1
-    ZZB -> (DBGoTop())
+    If !FWIsInit()
+        FWInit()
+    EndIf
 
-    //Posiciona o produto de código 000002
-    If ZZB -> (DBSeek(FWXFilial("ZZB")+ "000002"))
-    Alert(ZZB->ART_DESC)
-        
+    If !Used("SB1")
+        DbUseArea(.T., "TOPCONN", "SB1010", "SB1", .F., .F.)
+    EndIf
+
+    aArea := SB1->(GetArea())
+
+    DbSelectArea("SB1")
+    SB1->(DbSetOrder(1))
+    SB1->(DbGoTop())
+
+    If SB1->(DbSeek(FWXFilial("SB1") + "000002"))
+        Alert(SB1->B1_DESC)
     EndIf
 
     RestArea(aArea)
-    
 Return

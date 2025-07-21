@@ -48,7 +48,19 @@
 		},
 		{
 			"label": "U_IMPORTASZ5"
+		},
+		{
+			"label": "U_exercicio_tudo01"
+		},
+		{
+			"label": "U_maluco"
+		},
+		{
+			"label": "U_maluco2"
+		},
+		{
+			"label": "U_maluco3"
 		}
 	],
-	"lastProgramExecuted": "U_IMPORTASZ5"
+	"lastProgramExecuted": "U_maluco3"
 }
