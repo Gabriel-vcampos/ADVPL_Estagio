@@ -1,0 +1,302 @@
+#INCLUDE "PROTHEUS.CH" 
+#INCLUDE "RWMAKE.CH"
+#Include "TBICONN.CH"
+#INCLUDE "TOPCONN.CH"
+#INCLUDE "TOTVS.CH"
+
+/*------------------------------------------------------------------------//
+//Programa:	 IMPORTASZ5
+//Autor:	 Victor Lucas
+//Data:		 23/09/2024
+//Descricao: Importação de Contabilidade Gerencial.
+//------------------------------------------------------------------------*/
+
+User Function IMPORTASZ5()
+    Local cTexto
+    Local bConfirm
+    Local bSair
+
+    Local oDialog
+    Local oContainer
+    Public cSuccessCount := 0
+    Public lTableCleaned := .F.
+
+    Private cPlanilha  := ""
+    Public oExcel 
+    Private aOpcoes := {}
+    Private cAbas := ""
+    Private dDataIni := sToD("")
+    Private dDataFin := sToD("")
+     
+    Private oTGet1
+    Private oTGet2
+    Private oTButton1
+
+    bConfirm := {|| FwMsgRun(,{|oSay| ImportaPlanilha(oContainer, aOpcoes), NIL}, 'Buscando Planilha ... ', "",) }
+    bSair := {|| Iif(MsgYesNo('Você tem certeza que deseja sair da rotina?', 'Sair da rotina'), (oDialog:DeActivate()), NIL) }
+
+    oDialog := FWDialogModal():New()
+
+    oDialog:SetBackground(.T.)
+    oDialog:SetTitle('Importação Contabilidade FLUXX')
+    oDialog:SetSize(200, 280) 
+    oDialog:EnableFormBar(.T.)
+    oDialog:SetCloseButton(.F.)
+    oDialog:SetEscClose(.F.)  
+    oDialog:CreateDialog()
+    oDialog:CreateFormBar()
+    oDialog:AddButton('Importar', bConfirm, 'Confirmar', , .T., .F., .T.)
+    oDialog:AddButton('Sair', bSair, 'Sair', , .T., .F., .T.)
+    
+    oContainer := TPanel():New( ,,, oDialog:getPanelMain() )
+    oContainer:Align := CONTROL_ALIGN_ALLCLIENT
+
+    cTexto := '• Incluir registros FLUXX.'
+
+    oSay2 := TSay():New(010,010,{||cTexto},oContainer,,,,,,.T.,,,800,20)
+
+    // Adiciona campos para selecionar a planilha
+    oSay1 := TSay():New(035,010,{||'Selecione a Planilha:'},oContainer,,,,,,.T.,,,100,9)
+    oTGet0 := tGet():New(045,010,{|u| if(PCount()>0,cPlanilha:=u,cPlanilha)},oContainer ,180,9,"",,,,,,,.T.,,, {|| .T. } ,,,,.F.,,,"cPlanilha")
+
+    // Função chamada para selecionar a planilha e obter pastas *
+    oTButton1 := TButton():New(045, 200, "Selecionar..." ,oContainer,{|| (cPlanilha:=cGetFile("Arquivos Excel | *.xls*",OemToAnsi("Selecione Diretorio"),,"",.F.,GETF_LOCALHARD+GETF_NETWORKDRIVE,.F.)), FwMsgRun(,{|oSay|PegaAbas(oSay)},'Buscando Planilhas ... ',"",) } , 50,10,,,.F.,.T.,.F.,,.F.,,,.F. )
+
+    // Adiciona campos para selecionar a aba
+    oSay5 := TSay():New(065,010,{||'Selecione uma aba da planilha: '},oContainer,,,,,,.T.,,,100,9)
+    oCombo1 := TComboBox():New(075,010,{|u|if(PCount()>0,cAbas:=u,cAbas)},aOpcoes,100,9,oContainer,,,,,,.T.,,,,,,,,,'cAbas')    
+
+    oDialog:Activate()
+Return
+
+//--------------------------
+// Função para extrair as abas da planilha.
+//--------------------------
+Static Function PegaAbas(oSay)
+    Local nContP
+
+    oExcel := YExcel():new(, cPlanilha)
+    oExcel:OpenRead(cPlanilha)
+
+    aOpcoes := {}
+    For nContP := 1 to oExcel:LenPlanAt()
+        oExcel:SetPlanAt(nContP)
+        AADD(aOpcoes, ALLTRIM(STR(nContP) + ' - ' + EncodeUtf8(oExcel:GetPlanAt("2"))))
+    Next
+
+    If Len(aOpcoes) > 0
+        cAbas := aOpcoes[1]
+        oCombo1:SetItems(aOpcoes)
+        oCombo1:Refresh()
+    Else
+        FWAlertError("Nenhuma aba encontrada na planilha. Verifique o arquivo e tente novamente.", "Erro")
+        Return
+    EndIf
+Return aOpcoes
+
+//----------------------------------------
+// Verificar se a planilha foi selecionada.
+//----------------------------------------
+Static Function ImportaPlanilha(oContainer, aOpcoes)
+    Local lRet := .T.
+
+    If Empty(cPlanilha)
+        If oExcel != Nil
+            oExcel:Close()
+        EndIf
+        FWAlertInfo("Por favor, informe a planilha antes de continuar.", "Nenhuma planilha selecionada!")
+        lRet := .F.
+    EndIf
+
+    If lRet
+        If FWAlertNoYes("Confirma a importação com os dados informados?", "Importação")
+            lRet := .T.
+            If lRet
+                FwMsgRun(,{|oSay| lRet := ProcessarDados(oContainer, aOpcoes)}, 'Validando dados da Planilha. Aguarde ... ', "",)
+            EndIf
+        Else
+            lRet := .F.
+        EndIf
+    EndIf
+
+Return lRet
+//----------------------------------------
+// Função para processar e importar dados
+//----------------------------------------
+Static Function ProcessarDados(oContainer, aOpcoes)
+
+    Local oExcel      := Nil
+    Local nLin        := 0
+    Local nTotLin     := 0
+    Local nTotCol     := 0
+    Local aLista      := {} 
+    Local oJson
+
+    Local aCabecalhos := {}
+    Local nCol        := 1
+    Local lTemBaseRequest 
+    Local lTemNatureza   
+    Local lTemStatus     
+    Local nBlankCount := 0
+    Local cHeader := ""
+
+    oExcel := YExcel():New(, cPlanilha)
+    oExcel:OpenRead(cPlanilha)
+    oExcel:SetPlanAt(oCombo1:nAt)
+
+    nTotLin := oExcel:LinTam()
+    nTotCol := oExcel:ColTam()
+
+    For nLin := 3 To nTotLin[2]
+
+        oJson := JsonObject():New()
+
+        oJson["BaseRequest"]     := oExcel:GetValue(nLin, 1)                          // A
+        oJson["Natureza"]        := oExcel:GetValue(nLin, 2)                          // B
+        oJson["Ano"]             := oExcel:GetValue(nLin, 3)                          // C
+        oJson["Status"]          := Left(oExcel:GetValue(nLin, 4), 33)                // D
+        oJson["NomeStatus"]      := Left(oExcel:GetValue(nLin, 5), 33)                // E
+        oJson["ValorFinanciado"] := oExcel:GetValue(nLin, 6)                          // F
+        oJson["Historico"]       := Left(oExcel:GetValue(nLin, 7), 33)                // G
+        oJson["FonteRecurso"]    := Left(oExcel:GetValue(nLin, 8), 33)                // H
+        oJson["ItemContabil"]    := oExcel:GetValue(nLin, 9)                          // I
+        oJson["NomeItem"]        := Left(oExcel:GetValue(nLin, 10), 33)               // J
+        oJson["PO"]              := Left(oExcel:GetValue(nLin, 11), 33)               // K
+        oJson["Portfolio"]       := Left(oExcel:GetValue(nLin, 12), 33)               // L
+        oJson["CentroCusto"]     := oExcel:GetValue(nLin, 13)                         // M
+        oJson["NomeCC"]          := Left(oExcel:GetValue(nLin, 14), 33)               // N
+        
+        if ValType(oExcel:GetValue(2, 15)) == "C" .and. oExcel:GetValue(2, 15) == "Classe de Valor" .and.  Empty(oExcel:GetValue(2, 15)) 
+            If Empty(oExcel:GetValue(nLin, 15)) == .F.
+                oJson["ClasseValor"]     := oExcel:GetValue(nLin, 15)                 // O  
+            EndIf
+        Endif
+
+        if ValType(oExcel:GetValue(2, 16)) == "C" .and. !Empty(oExcel:GetValue(2, 16)) .and. oExcel:GetValue(2, 16) == "Nome da Classe"
+            If Empty(oExcel:GetValue(nLin, 16)) == .F.
+                oJson["NomeClasse"]      := Left(oExcel:GetValue(nLin, 16), 33)       // P
+            EndIf
+        Endif
+
+        oJson["LINHA"] := nLin
+
+        AAdd(aLista, oJson) 
+
+    Next
+
+    For nCol := 1 To 50
+        cHeader := AllTrim(oExcel:GetValue(2, nCol))
+        If Empty(cHeader)
+            nBlankCount++
+        Else
+            nBlankCount := 0
+        EndIf
+        AAdd(aCabecalhos, cHeader)
+        If nBlankCount == 3
+            ASIZE(aCabecalhos, Len(aCabecalhos)-3)
+            Exit
+        EndIf
+    Next
+
+    lTemBaseRequest := (ASCAN(aCabecalhos, {|c| Upper(c) == "BASE REQUEST"}) > 0)
+    lTemNatureza    := (ASCAN(aCabecalhos, {|c| Upper(c) == "NATUREZA"}) > 0)
+    lTemStatus      := (ASCAN(aCabecalhos, {|c| Upper(c) == "STATUS"}) > 0)
+
+    If !(lTemBaseRequest .and. lTemNatureza .and. lTemStatus)
+        FWAlertError("A planilha deve conter os campos 'Base Request', 'Natureza' e 'Status' no cabeçalho.", "Erro de Cabeçalho")
+        Return {}
+    EndIf
+
+
+    FinalizaImport(oExcel, nLin, @aLista)
+Return aLista
+
+//----------------------------------------
+// Verificar se a importao deve ser concluda
+//----------------------------------------
+Static Function FinalizaImport(oExcel, nLin, aLista)
+
+    Local oJson 
+    Local LinTam
+    Local i      := 0 
+    
+    LinTam := Len(aLista)
+    TableClean()
+
+    For i := 1 To LinTam
+
+        oJson := aLista[i]
+
+        If Select("SZ5") == 0
+            DbUseArea(.T., "TOPCONN", RetSqlName("SZ5"), "SZ5", .F., .T.)
+        EndIf
+        
+        NormalizaCampos(oJson)
+
+        If RecLock("SZ5", .T.)
+
+            //SZ5->Z5_FILIAL     := xFilial("SZ5")
+            SZ5->Z5_BASEREQ    := oJson["BaseRequest"]
+            SZ5->Z5_ANO        := oJson["Ano"]
+            SZ5->Z5_STATUS     := oJson["Status"]
+            SZ5->Z5_NSTATUS    := oJson["NomeStatus"]
+            SZ5->Z5_AMOUNTI    := oJson["ValorFinanciado"]
+            SZ5->Z5_HISTORI    := oJson["Historico"]
+            SZ5->Z5_FRECURS    := oJson["FonteRecurso"]
+            SZ5->Z5_ITEMCON    := oJson["ItemContabil"]
+            SZ5->Z5_NOMEITE    := oJson["NomeItem"]
+            SZ5->Z5_PO         := oJson["PO"]
+            SZ5->Z5_PORTFOL    := oJson["Portfolio"]
+            SZ5->Z5_CC         := oJson["CentroCusto"]
+            SZ5->Z5_NOMECC     := oJson["NomeCC"]
+            If oJson["ClasseValor"] != Nil
+                SZ5->Z5_CVALOR     := oJson["ClasseValor"]
+            EndIf
+
+            If oJson["NomeClasse"] != Nil
+                SZ5->Z5_NOMECLA    := oJson["NomeClasse"]
+            EndIf
+
+            MsUnlock()
+
+        Else
+            FWAlertError("Erro ao tentar gravar linha " + AllTrim(Str(i)) + "!", "Erro")
+        EndIf
+
+    Next
+
+    FWAlertInfo("Importação Realizada com sucesso!", "Sucesso!")
+Return .T.
+
+//--------------------------
+// Apaga registro de importações anteriores.
+//--------------------------
+Static Function TableClean()
+    If !lTableCleaned
+        cQuery1 := "DELETE FROM " + RetSqlName("SZ5")
+        
+        If TCSQLExec(cQuery1) == 0
+            lTableCleaned = .T.  // Marca que a tabela foi limpa
+        Else
+            FWAlertError("Não foi possível limpar a tabela SZ5.", "Erro")
+        Endif
+    Endif
+Return
+
+//--------------------------
+// Valtype == C
+//--------------------------
+Static Function NormalizaCampos(oJson)
+
+    Local nI := 0
+    Local aCampos := {"BaseRequest", "Natureza", "Ano", "ItemContabil", "CentroCusto", "ClasseValor"}
+
+    For nI := 1 To Len(aCampos)
+        cCampo := aCampos[nI]
+
+        If ValType(oJson[cCampo]) != "C"
+            oJson[cCampo] := cValToChar(oJson[cCampo])
+        EndIf
+
+    Next
+Return oJson
