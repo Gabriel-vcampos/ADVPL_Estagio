@@ -78,7 +78,14 @@
 		},
 		{
 			"label": "U_desafioestoque"
+		},
+		{
+			"label": "SIGAPMS"
+		},
+		{
+			"label": "U_IMPORTZ5"
 		}
 	],
-	"lastProgramExecuted": "U_desafioestoque"
+	"lastProgramExecuted": "U_banco01",
+	"lastProgramArguments": []
 }
