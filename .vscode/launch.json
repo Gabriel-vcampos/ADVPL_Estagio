@@ -87,8 +87,14 @@
 		},
 		{
 			"label": "U_banco001"
+		},
+		{
+			"label": "U_basico01"
+		},
+		{
+			"label": "U_basico02"
 		}
 	],
-	"lastProgramExecuted": "U_banco01",
+	"lastProgramExecuted": "<cancel>",
 	"lastProgramArguments": []
 }
